@@ -18,7 +18,20 @@ namespace Guldkortet
         }
 
         // Konstruktor för att skapa en instans med anpassade värden
-        public FlyingSquirrel(int speed, string element, int flySpeed, bool isCute, string name, string description) : base(name, description)
+        public FlyingSquirrel
+            (
+            int speed, 
+            string element, 
+            int flySpeed, 
+            bool isCute, 
+            string name, 
+            string description
+            ) 
+            : base
+            (
+                  name, 
+                  description
+            )
         {
             Speed = speed;
             Element = element;
