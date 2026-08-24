@@ -2,8 +2,10 @@
 
 namespace Guldkortet
 {
+    // Underklassen Dunderkatt och dess properties
     public class ThunderCat : Reward
     {
+        // Unika properties för Dunderkatt datan
         public int Speed { get; set; } = 120;
         public string Element { get; set; } = "Blixt";
         public string SpecialAttack { get; set; } = "Eld kula";
