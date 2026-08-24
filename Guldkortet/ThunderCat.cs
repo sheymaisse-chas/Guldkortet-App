@@ -1,9 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Guldkortet
 {
@@ -13,6 +8,11 @@ namespace Guldkortet
         public string Element { get; set; } = "Blixt";
         public string SpecialAttack { get; set; } = "Eld kula";
 
+        // Konstruktor som sätter namn och beskrivning automatiskt om det finns
+        public ThunderCat() : base("Dunderkatt", "En blixtsnabb katt med elektriska krafter!")
+        {
+        }
+
         public ThunderCat (int speed, string element, string specialAttack, string name, string description) : base (name, description)
         {
             Speed = speed;
@@ -21,7 +21,7 @@ namespace Guldkortet
         }
         public override string GenerateMessage()
         {
-            return $"Grattis! Du har vunnit {Name}: {Description}";
+            return $"Grattis! Du har vunnit {Name}: Element - {Element}, Hastighet - {Speed} km/h, Specialattack - {SpecialAttack}. {Description}";
         }
     }
 }

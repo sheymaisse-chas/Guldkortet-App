@@ -8,13 +8,13 @@ namespace Guldkortet
         // Properties för kunddata
         public string CustomerId { get; set;}
         public string Name { get; set; }
-        public string Email { get; set; }
+        public string City { get; set; }
 
-        public Customer(string customerId, string name, string email)
+        public Customer(string customerId, string name, string city)
         {
             CustomerId = customerId;
             Name = name;
-            Email = email;
+            City = city;
         }
     }
 }

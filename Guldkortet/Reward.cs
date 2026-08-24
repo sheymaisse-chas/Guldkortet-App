@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace Guldkortet
 {
-    // Beloning klassen och dess properties
+    // Belöning klassen och dess properties
     public class Reward
     {
-        // Properties för belonings datan
+        // Properties för belönings datan
         public string Name { get; set; }
         public string Description { get; set; }
 

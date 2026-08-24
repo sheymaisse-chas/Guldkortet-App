@@ -46,6 +46,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Card.cs" />
+    <Compile Include="CrystalSteed.cs" />
+    <Compile Include="FireTomato.cs" />
+    <Compile Include="OverPanda.cs" />
+    <Compile Include="ThunderCat.cs" />
+    <Compile Include="Reward.cs" />
+    <Compile Include="Customer.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
     </Compile>
