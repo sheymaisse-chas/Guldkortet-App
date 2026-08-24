@@ -5,7 +5,7 @@ namespace Guldkortet
     // Underklassen Eldhund och dess properties
     public class FireHound : Reward
     {
-        // Unika properties för Eldhunds data
+        // Unika properties för Eldhund datan
         public int Speed { get; set; } = 105;
         public string Element { get; set; } = "Fire";
         public int BarkVolume { get; set; } = 120;
