@@ -63,6 +63,7 @@
   <ItemGroup>
     <Compile Include="Card.cs" />
     <Compile Include="CrystalSteed.cs" />
+    <Compile Include="DatabaseManager.cs" />
     <Compile Include="FlyingSquirrel.cs" />
     <Compile Include="FireHound.cs" />
     <Compile Include="RewardFactory.cs" />
