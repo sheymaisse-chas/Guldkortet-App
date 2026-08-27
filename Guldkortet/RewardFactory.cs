@@ -1,10 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace Guldkortet
 {
@@ -32,20 +26,6 @@ namespace Guldkortet
                     // Detta sker om strängen inte matchar något känt namn
                     throw new ArgumentException($"Okänd belöningstyp: {rewardTypeFromDb}");
             }
-            /*
-                // 1. Låtsas att vi hämtat strängen "Eldtomat" från databasen
-                string dbRewardString = "Eldtomat"; 
-
-                // 2. Skapa objektet via fabriken
-                Reward newCard = RewardFactory.CreateReward(dbRewardString);
-
-                // 3. Lägg till i listan över belöningar
-                myRewardList.Add(newCard);
-
-                // 4. Visa meddelandet på skärmen (körs automatiskt via polymorfism!)
-                Console.WriteLine(newCard.GenerateMessage());
-             */
-
         }
     }
 }

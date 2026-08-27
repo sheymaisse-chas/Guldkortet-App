@@ -36,7 +36,14 @@ namespace Guldkortet
                     object result = command.ExecuteScalar();
 
                     // Om resultatet inte är null returneras korttypen som text, annars returner den null
-                    return result?.ToString();
+                    if (result != null)
+                    {
+                        return result.ToString();
+                    }
+                    else
+                    {
+                        return null;
+                    }
                 }
             }
         }
