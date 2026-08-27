@@ -3,6 +3,7 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 
 namespace Guldkortet
 {
@@ -27,21 +28,42 @@ namespace Guldkortet
         // Startar servern och börjar lyssna
         public void StartServer()
         {
-            listener = new TcpListener(IPAddress.Any, port);
-            listener.Start();
-            isRunning = true;
+            // Try-Catch sats som tar emot anslutningar
+            try
+            {
+                listener = new TcpListener(IPAddress.Any, port);
+                listener.Start();
+                isRunning = true;
 
-            // Loop som tar emot anslutningar
+                // Kör lyssnarloopen i en egen tråd så att gränssnittet inte fryser
+                Thread serverThread = new Thread(ListenForClients);
+                serverThread.IsBackground = true;
+                serverThread.Start();
+            }
+            catch (Exception ex)
+            {
+                // Om servern ej startas
+                Console.WriteLine("Kunde inte starta servern: " + ex.Message);
+            }
+        }
+
+        // Loop som tar emot anslutningar i bakgrunden
+        private void ListenForClients()
+        {
             while (isRunning)
             {
                 try
                 {
                     TcpClient client = listener.AcceptTcpClient();
-                    HandleClient(client);
+
+                    // Hanterar varje klient i en egen tråd för god prestanda
+                    Thread clientThread = new Thread(() => HandleClient(client));
+                    clientThread.IsBackground = true;
+                    clientThread.Start();
                 }
                 catch
                 {
-                    // Stränger loopen om servern stängs av
+                    // Stänger loopen om servern stängs av
                     break;
                 }
             }
@@ -68,7 +90,7 @@ namespace Guldkortet
 
                 // 2. Delar upp strängen vid bindestrecket
                 string[] parts = rawData.Split('-');
-                string userId = parts[0].Trim();
+                string customerId = parts[0].Trim();
                 string cardId = parts[1].Trim();
 
                 // 3. Söker i databasen efter korttypen
@@ -80,11 +102,18 @@ namespace Guldkortet
                     // Skapar ett Reward-objekt via fabriken
                     Reward reward = RewardFactory.CreateReward(rewardType);
 
-                    // Skickar svarspopup tillbaka till NOS_Export
-                    writer.WriteLine("Kort godkänt! Belöning: " + rewardType);
+                    if (reward != null)
+                    {
+                        // Markerar kortet som utnyttjat (UPDATE) och loggar i databasen (INSERT)
+                        dbManager.MarkCardUsed(cardId);
+                        dbManager.InsertTransactionLog(cardId, customerId, reward.Name);
 
-                    // Skickar kortet till gränssnittet
-                    mainForm.AddRewardToList(reward, userId);
+                        // Skickar svarspopup tillbaka till NOS_Export
+                        writer.WriteLine("Kort godkänt! Belöning: " + rewardType);
+
+                        // Skickar kortet till gränssnittet
+                        mainForm.AddRewardToList(reward, customerId);
+                    }
                 }
                 else
                 {
