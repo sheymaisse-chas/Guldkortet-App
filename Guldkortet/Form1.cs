@@ -46,12 +46,12 @@ namespace Guldkortet
 
         // Tar emot ett godkänt belöningsobjekt från ServerManager,
         // sparar det i listan, uppdaterar gränssnittet och loggar till fil.
-        public void AddRewardToList(Reward reward, string userId)
+        public void AddRewardToList(Reward reward, string customerId)
         {
             // Eftersom TCP körs i bakgrunden använder vi Invoke för att uppdatera UI säkert
             if (this.InvokeRequired)
             {
-                this.Invoke(new Action(() => AddRewardToList(reward, userId)));
+                this.Invoke(new Action(() => AddRewardToList(reward, customerId)));
                 return;
             }
 
@@ -59,25 +59,28 @@ namespace Guldkortet
             rewardList.Add(reward);
 
             // 2. Skapar presentationstext via polymorfism
-            string displayInfo = $"[Kund: {userId}] - {reward.Name}: {reward.GenerateMessage()}";
+            string displayInfo = $"[Kund: {customerId}] - {reward.GenerateMessage()}";
 
             // 3. Visar i gränssnittets ListBox
             lstRewards.Items.Add(displayInfo);
 
+            // TEST: Ändra färg på ListBoxens bakgrund till guld/gul för att bekräfta att metoden körs!
+            lstRewards.BackColor = System.Drawing.Color.Gold;
+
             // 4. Loggar händelsen till log.txt
-            LogToFile(userId, reward);
+            LogToFile(customerId, reward);
         }
 
         /* --- FILHANTERING (log.txt enligt avsnitt 5.2) --- */
 
         // Loggar godkända vinster med tidsstämpel till log.txt
-        private void LogToFile(string userId, Reward reward)
+        private void LogToFile(string customerId, Reward reward)
         {
             try
             {
                 string logPath = "log.txt";
                 string timeStamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-                string logMessage = $"[{timeStamp}] Användare: {userId} löste in kort -> Belöning: {reward.Name}";
+                string logMessage = $"[{timeStamp}] Användare: {customerId} löste in kort -> Belöning: {reward.Name}";
 
                 // Använder StreamWriter med append: true för att bevara tidigare data
                 using (StreamWriter writer = new StreamWriter(logPath, true, Encoding.UTF8))
@@ -96,6 +99,22 @@ namespace Guldkortet
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
             serverManager.StopServer();
+        }
+
+        private void lblStatus_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        // Debug metod
+        public void AddDebugLog(string message)
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke(new Action(() => AddDebugLog(message)));
+                return;
+            }
+            lstRewards.Items.Add($"[LOGG {DateTime.Now:HH:mm:ss}] {message}");
         }
     }
 }

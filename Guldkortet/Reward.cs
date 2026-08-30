@@ -12,14 +12,16 @@ namespace Guldkortet
         // Properties för belönings datan
         public string Name { get; set; }
         public string Description { get; set; }
+        public string ImagePath { get; set; }
 
         // Tom konstruktor så underklasserna enkelt kan sätta Name och Description själva
         public Reward() { }
 
-        public Reward (string name, string description)
+        public Reward (string name, string description, string imagePath)
         {
             Name = name;
             Description = description;
+            ImagePath = imagePath;
         }
         
         // En virtual metod som genererar texten som kommer visas på gränssnittet

@@ -12,12 +12,12 @@ namespace Guldkortet
         public bool IsImmuneToFrost { get; set; } = true;
 
         // Standardkonstruktor som sätter fördefinierat namn och beskrivning
-        public FireHound() : base("Eldhund", "En varm och lojal hund av ren eld!")
+        public FireHound() : base("Eldhund", "En varm och lojal hund av ren eld!", "firehound.jpg")
         {
         }
 
         // Konstruktor för att skapa en instans med anpassade värden
-        public FireHound(int speed, string element, int barkVolume, bool isImmuneToFrost, string name, string description) : base(name, description)
+        public FireHound(int speed, string element, int barkVolume, bool isImmuneToFrost, string name, string description, string imagePath) : base(name, description, imagePath)
         {
             Speed = speed;
             Element = element;
@@ -28,7 +28,7 @@ namespace Guldkortet
         // En override metod som skriver ut en anpassad text för denna underklass
         public override string GenerateMessage()
         {
-            return $"Grattis! Du har vunnit {Name}: Element - {Element}, Hastighet - {Speed} km/h, Skallvolym - {BarkVolume}. Frostimmunitet - {IsImmuneToFrost}, {Description}";
+            return $"Grattis! Du har vunnit {Name}: Element - {Element}, Hastighet - {Speed} km/h, Skallvolym - {BarkVolume}. Frostimmunitet - {IsImmuneToFrost}, {ImagePath} {Description}";
         }
     }
 }

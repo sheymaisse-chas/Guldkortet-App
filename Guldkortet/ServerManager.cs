@@ -3,7 +3,7 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading;
+using System.Threading.Tasks;
 
 namespace Guldkortet
 {
@@ -31,14 +31,15 @@ namespace Guldkortet
             // Try-Catch sats som tar emot anslutningar
             try
             {
-                listener = new TcpListener(IPAddress.Any, port);
+                // Om instruktionen anger 127.0.0.1 (Localhost):
+                IPAddress localAddr = IPAddress.Parse("127.0.0.1");
+
+                listener = new TcpListener(localAddr, port);
                 listener.Start();
                 isRunning = true;
 
-                // Kör lyssnarloopen i en egen tråd så att gränssnittet inte fryser
-                Thread serverThread = new Thread(ListenForClients);
-                serverThread.IsBackground = true;
-                serverThread.Start();
+                // Anropar den asynkrona lyssnarloopen direkt
+                ListenForClientsAsync();
             }
             catch (Exception ex)
             {
@@ -48,18 +49,17 @@ namespace Guldkortet
         }
 
         // Loop som tar emot anslutningar i bakgrunden
-        private void ListenForClients()
+        private async void ListenForClientsAsync()
         {
             while (isRunning)
             {
                 try
                 {
-                    TcpClient client = listener.AcceptTcpClient();
+                    // await gör att programmet väntar här i bakgrunden tills en klient ansluter
+                    TcpClient client = await listener.AcceptTcpClientAsync();
 
-                    // Hanterar varje klient i en egen tråd för god prestanda
-                    Thread clientThread = new Thread(() => HandleClient(client));
-                    clientThread.IsBackground = true;
-                    clientThread.Start();
+                    // Startar hanteringen av klienten asynkront
+                    HandleClientAsync(client);
                 }
                 catch
                 {
@@ -70,69 +70,153 @@ namespace Guldkortet
         }
 
         // Hanterar den anslutna klienten NOS_Export
-        private void HandleClient(TcpClient client)
+        private async Task HandleClientAsync(TcpClient client)
         {
-            NetworkStream stream = client.GetStream();
-            StreamReader reader = new StreamReader(stream, Encoding.UTF8);
-            StreamWriter writer = new StreamWriter(stream, Encoding.UTF8) { AutoFlush = true };
-
-            try
+            // 'using' ser till att allt stängs automatiskt när det är klart
+            using (client)
+            using (NetworkStream stream = client.GetStream())
+            using (StreamReader reader = new StreamReader(stream, Encoding.Default))
+            using (StreamWriter writer = new StreamWriter(stream, Encoding.Default) { AutoFlush = true })
             {
-                // 1. Läser texten från NOS_Export (t.ex. "A1256720-K57295726")
-                string rawData = reader.ReadLine();
 
-                // Kontrollera att texten inte är tom och innehåller ett bindestreck
-                if (string.IsNullOrEmpty(rawData) || !rawData.Contains("-"))
+                try
                 {
-                    writer.WriteLine("Fel: Koden har ett ogiltigt format.");
-                    return;
-                }
+                    // Loggar i gränssnittet att någon faktiskt anslöt
+                    mainForm.Invoke(new Action(() =>
+                        mainForm.AddDebugLog("Klient ansluten! Väntar på data...")));
 
-                // 2. Delar upp strängen vid bindestrecket
-                string[] parts = rawData.Split('-');
-                string customerId = parts[0].Trim();
-                string cardId = parts[1].Trim();
+                    // Loggar i gränssnittet om data är direkt tillgängligt
+                    mainForm.Invoke(new Action(() =>
+                        mainForm.AddDebugLog($"DataAvailable direkt vid anslutning: {stream.DataAvailable}")));
 
-                // 3. Söker i databasen efter korttypen
-                string rewardType = dbManager.GetRewardTypeByCardId(cardId);
-
-                // 4. Om kortet hittades i databasen
-                if (rewardType != null)
-                {
-                    // Skapar ett Reward-objekt via fabriken
-                    Reward reward = RewardFactory.CreateReward(rewardType);
-
-                    if (reward != null)
+                    while (client.Connected)
                     {
-                        // Markerar kortet som utnyttjat (UPDATE) och loggar i databasen (INSERT)
-                        dbManager.MarkCardUsed(cardId);
-                        dbManager.InsertTransactionLog(cardId, customerId, reward.Name);
 
-                        // Skickar svarspopup tillbaka till NOS_Export
-                        writer.WriteLine("Kort godkänt! Belöning: " + rewardType);
+                        // Läser en bestämd mängd tecken istället för att vänta på en
+                        // radbrytning eller stängningtexten från NOS_Export (t.ex. "A1256720-K57295726")
+                        char[] buffer = new char[19];
+                        int charsRead = await reader.ReadAsync(buffer, 0, 19);
 
-                        // Skickar kortet till gränssnittet
-                        mainForm.AddRewardToList(reward, customerId);
+                        if (charsRead == 0)
+                        {
+                            // Klienten stängde anslutningen normalt
+                            break;
+                        }
+
+                        string rawData = new string(buffer, 0, charsRead);
+
+                        if (charsRead != 19)
+                        {
+                            throw new InvalidCodeFormatException("Koden uppfyller inte det förväntade antalet tecken.");
+                        }
+
+                        if (rawData == null)
+                        {
+                            mainForm.Invoke(new Action(() =>
+                                mainForm.AddDebugLog("RawData variabeln är null")));
+                        }
+
+                        // Loggar i gränssnittet exakt vad simulatorn skickade
+                        mainForm.Invoke(new Action(() =>
+                            mainForm.AddDebugLog($"Mottog rådata: '{rawData}'")));
+
+                        // Kontrollerar att texten inte är tom
+                        if (string.IsNullOrEmpty(rawData))
+                        {
+                            await TryWriteStringAsync(writer, "Fel: Tom data.");
+                            return;
+                        }
+
+                        // Kontrollera att texten innehåller ett bindestreck
+                        if (!rawData.Contains("-"))
+                        {
+                            throw new InvalidCodeFormatException("Koden saknar bindestreck.");
+                        }
+
+                        // Delar upp strängen vid bindestrecket
+                        string[] parts = rawData.Split('-');
+                        string customerId = parts[0].Trim();
+                        string cardId = parts[1].Trim();
+
+                        // 3. Söker i databasen efter korttypen
+                        string rewardType = dbManager.GetRewardTypeByCardId(cardId);
+
+                        // 4. Om kortet hittades i databasen
+                        if (rewardType != null)
+                        {
+                            // Skapar ett Reward-objekt via fabriken
+                            Reward reward = RewardFactory.CreateReward(rewardType);
+
+                            if (reward != null)
+                            {
+                                // Markerar kortet som utnyttjat (UPDATE) och loggar i databasen (INSERT)
+                                dbManager.MarkCardUsed(cardId);
+                                dbManager.InsertTransactionLog(cardId, customerId, reward.Name);
+
+                                // Skickar svarspopup tillbaka till NOS_Export
+                                await TryWriteStringAsync(writer, reward.GenerateMessage());
+
+                                // Skickar kortet till gränssnittet
+                                mainForm.AddRewardToList(reward, customerId);
+                            }
+                        }
+                        else
+                        {
+                            // Annars visas ett felet att kortet inte hittades eller redan använts
+                            await TryWriteStringAsync(writer, "Fel: Kortet är inte ett giltigt eller oanvänt guldkort.");
+
+
+                            // Loggar i gränssnittetatt kort-id inte hittades
+                            mainForm.Invoke(new Action(() =>
+                                mainForm.AddDebugLog($"Kort-ID {cardId} hittades inte i DB eller var använt.")));
+                        }
                     }
                 }
-                else
+                catch (InvalidCodeFormatException ex)
                 {
-                    // Annars visas ett felet att kortet inte hittades
-                    writer.WriteLine("Fel: Kortet hittades inte i databasen.");
+                    // Sker om formatet är fel
+                    await TryWriteStringAsync(writer, "Fel: " + ex.Message);
+
+
+
+                    mainForm.Invoke(new Action(() =>
+                        mainForm.AddDebugLog("Formatfel: " + ex.Message)));
                 }
+                catch (IOException ex )
+                {
+                    // Sker om klienten kopplade från oväntat
+                    Console.WriteLine($"[Nätverksfel] Klienten kopplades från oväntat: {ex.Message}");
+                }
+                catch (SocketException ex)
+                {
+                    // Sker om socketen stängdes från klientens sida
+                    Console.WriteLine($"[Socketfel] Nätverksanslutningen bröts: {ex.Message}");
+                }
+                catch (Exception ex)
+                {
+                    // Om ett fel sker vid behandlingen av en kod
+                    Console.WriteLine($"[Systemfel] Oväntat fel vid behandling: {ex.Message}");
+
+
+                    // Loggar i gränssnittet att det skett ett undantag i servern
+                    mainForm.Invoke(new Action(() =>
+                        mainForm.AddDebugLog("Undantag i server: " + ex.Message)));
+
+                }
+            }
+        }
+
+        // Hjälpmetod för att skriva säkert utan att krascha om klienten har kopplat från
+        private async Task TryWriteStringAsync(StreamWriter writer, string message)
+        {
+            try
+            {
+                await writer.WriteLineAsync(message);
             }
             catch (Exception ex)
             {
-                // Om ett fel sker vid behandlingen av en kod
-                writer.WriteLine("Fel vid behandling: " + ex.Message);
-            }
-            finally
-            {
-                // Stänger strömmar och anslutning säkert
-                writer.Close();
-                reader.Close();
-                stream.Close();
-                client.Close();
+                // Om klienten hann koppla från innan vi svarade ignorerar vi skrivfelet
+                Console.WriteLine($"[Skrivfel] Kunde inte skicka svar till klienten ('{message}'). Orsak: {ex.Message}");
             }
         }
 

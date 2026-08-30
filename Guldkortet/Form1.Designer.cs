@@ -46,7 +46,7 @@
             // 
             // btnStop
             // 
-            this.btnStop.Location = new System.Drawing.Point(12, 548);
+            this.btnStop.Location = new System.Drawing.Point(12, 796);
             this.btnStop.Name = "btnStop";
             this.btnStop.Size = new System.Drawing.Size(228, 76);
             this.btnStop.TabIndex = 1;
@@ -57,11 +57,12 @@
             // lblStatus
             // 
             this.lblStatus.AutoSize = true;
-            this.lblStatus.Location = new System.Drawing.Point(1016, 9);
+            this.lblStatus.Location = new System.Drawing.Point(257, 9);
             this.lblStatus.Name = "lblStatus";
             this.lblStatus.Size = new System.Drawing.Size(194, 32);
             this.lblStatus.TabIndex = 2;
             this.lblStatus.Text = "Status: Offline";
+            this.lblStatus.Click += new System.EventHandler(this.lblStatus_Click);
             // 
             // lstRewards
             // 
@@ -69,14 +70,14 @@
             this.lstRewards.ItemHeight = 31;
             this.lstRewards.Location = new System.Drawing.Point(263, 62);
             this.lstRewards.Name = "lstRewards";
-            this.lstRewards.Size = new System.Drawing.Size(947, 562);
+            this.lstRewards.Size = new System.Drawing.Size(1608, 810);
             this.lstRewards.TabIndex = 3;
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(16F, 31F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1231, 648);
+            this.ClientSize = new System.Drawing.Size(1883, 894);
             this.Controls.Add(this.lstRewards);
             this.Controls.Add(this.lblStatus);
             this.Controls.Add(this.btnStop);

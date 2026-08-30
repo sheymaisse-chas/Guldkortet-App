@@ -11,11 +11,11 @@ namespace Guldkortet
         public string SpecialAttack { get; set; } = "Eld kula";
 
         // Konstruktor som sätter namn och beskrivning automatiskt om det finns
-        public ThunderCat() : base("Dunderkatt", "En blixtsnabb katt med elektriska krafter!")
+        public ThunderCat() : base("Dunderkatt", "En blixtsnabb katt med elektriska krafter!", "thundercat.png")
         {
         }
 
-        public ThunderCat (int speed, string element, string specialAttack, string name, string description) : base (name, description)
+        public ThunderCat (int speed, string element, string specialAttack, string name, string description, string imagePath) : base (name, description, imagePath)
         {
             Speed = speed;
             Element = element;
@@ -23,7 +23,7 @@ namespace Guldkortet
         }
         public override string GenerateMessage()
         {
-            return $"Grattis! Du har vunnit {Name}: Element - {Element}, Hastighet - {Speed} km/h, Specialattack - {SpecialAttack}. {Description}";
+            return $"Grattis! Du har vunnit {Name}: Element - {Element}, Hastighet - {Speed} km/h, Specialattack - {SpecialAttack}. {ImagePath} {Description}";
         }
     }
 }

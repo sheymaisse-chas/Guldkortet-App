@@ -13,13 +13,13 @@ namespace Guldkortet
             // Switch-satsen matchar databasens text mot programmets Reward underklasser
             switch (rewardTypeFromDb)
             {
-                case "Eldtomat":
+                case "FireHound":
                     return new FireHound();
-                case "Dunderkatt":
+                case "ThunderCat":
                     return new ThunderCat();
-                case "Överpanda":
+                case "FlyingSquirrel":
                     return new FlyingSquirrel();
-                case "Kristallhäst":
+                case "CrystalSteed":
                     return new CrystalSteed();
 
                 default:
