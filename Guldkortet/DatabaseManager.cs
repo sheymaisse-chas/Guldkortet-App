@@ -9,10 +9,10 @@ namespace Guldkortet
         private string connectionString = @"Data Source=C:\Users\Sheyma\Documents\C-Sharp\Guldkortet\Guldkortet\Guldkortet.db";
 
         // Metod som hämtar korttypen ("Eldtomat" osv.) från databasen utifrån kortets ID
-        public string GetRewardTypeByCardId(string cardId)
+        public CardLookupResult GetCardInfo(string cardId)
         {
             // SQL-fråga med parameter(@CardId) för att förhindra SQL Injection(attacker)
-            string query = "SELECT CardName FROM Cards WHERE CardID = @CardId AND IsGoldCard = 1 AND IsUsed = 0";
+            string query = "SELECT CardName, IsGoldCard, IsUsed FROM Cards WHERE CardID = @CardId";
 
             // Skapar och öppnar anslutningen säkert. 
             // 'using' ser till att databasanslutningen stängs och frigörs automatiskt även vid eventuella fel.
@@ -29,23 +29,31 @@ namespace Guldkortet
                     // Öppna anslutningen mot databasfilen
                     connection.Open();
 
-                    // ExecuteScalar används eftersom vi bara förväntar oss ett enskilt värde i retur
-                    object result = command.ExecuteScalar();
+                    // ExecuteReader används eftersom vi nu hämtar flera kolumner (CardName, IsGoldCard, IsUsed) från samma rad
+                    using (SqliteDataReader reader = command.ExecuteReader())
+                    {
+                        // Om en rad hittas byggs ett CardLookupResult med kortets data, annars returneras Found = false
+                        if (reader.Read())
+                        {
+                            return new CardLookupResult
+                            {
+                                Found = true,
+                                CardName = reader.GetString(0),
+                                IsGoldCard = reader.GetInt32(1) == 1,
+                                IsUsed = reader.GetInt32(2) == 1
+                            };
+                        }
+                        else
+                        {
+                            return new CardLookupResult { Found = false };
+                        }
 
-                    // Om resultatet inte är null returneras korttypen som text, annars returnerar den null
-                    if (result != null)
-                    {
-                        return result.ToString();
-                    }
-                    else
-                    {
-                        return null;
                     }
                 }
-                catch (Exception ex)
+                catch (SqliteException ex)
                 {
-                    Console.WriteLine($"Databasfel i GetRewardTypeByCardId: {ex.Message}");
-                    return null;
+                    // Om databasanslutningen eller frågan misslyckas kastas ett eget undantag
+                    throw new DatabaseConnectionException("Kunde inte hämta kortinformation från databasen.", ex);
                 }
             }
         }
@@ -73,10 +81,9 @@ namespace Guldkortet
                     // Om mer än 0 rader uppdaterades returneras true (att den lyckades)
                     return rowsAffected > 0;
                 }
-                catch (Exception ex)
+                catch (SqliteException ex)
                 {
-                    Console.WriteLine($"Databasfel i MarkCardUsed: {ex.Message}");
-                    return false;
+                    throw new DatabaseConnectionException("Kunde inte uppdatera kortets status i databasen.", ex);
                 }
             }
         }
@@ -105,10 +112,9 @@ namespace Guldkortet
 
                     return rowsAffected > 0;
                 }
-                catch (Exception ex)
+                catch (SqliteException ex)
                 {
-                    Console.WriteLine($"Databasfel i InsertTransactionLog: {ex.Message}");
-                    return false;
+                    throw new DatabaseConnectionException("Kunde inte spara transaktionsloggen i databasen.", ex);
                 }
 
             }

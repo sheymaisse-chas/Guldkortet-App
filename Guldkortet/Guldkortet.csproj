@@ -107,11 +107,16 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Card.cs" />
+    <Compile Include="CardAlreadyUsedException.cs" />
+    <Compile Include="CardLookupResult.cs" />
     <Compile Include="CrystalSteed.cs" />
+    <Compile Include="DatabaseConnectionException.cs" />
     <Compile Include="DatabaseManager.cs" />
     <Compile Include="FlyingSquirrel.cs" />
     <Compile Include="FireHound.cs" />
+    <Compile Include="GuldkortetException.cs" />
     <Compile Include="InvalidCodeFormatException.cs" />
+    <Compile Include="MyRewardList.cs" />
     <Compile Include="RewardFactory.cs" />
     <Compile Include="ServerManager.cs" />
     <Compile Include="ThunderCat.cs" />

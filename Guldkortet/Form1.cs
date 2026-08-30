@@ -10,7 +10,7 @@ namespace Guldkortet
     public partial class Form1 : Form
     {
         // 1. Skapar en generisk lista för belöningar
-        private List<Reward> rewardList = new List<Reward>();
+        private MyRewardList rewardList = new MyRewardList();
 
         // 2. Detta är en referens till nätverkshanteraren som sköter nätverkskommunikationen (TCP)
         private ServerManager serverManager;
@@ -64,11 +64,26 @@ namespace Guldkortet
             // 3. Visar i gränssnittets ListBox
             lstRewards.Items.Add(displayInfo);
 
-            // TEST: Ändra färg på ListBoxens bakgrund till guld/gul för att bekräfta att metoden körs!
-            lstRewards.BackColor = System.Drawing.Color.Gold;
-
             // 4. Loggar händelsen till log.txt
             LogToFile(customerId, reward);
+        }
+
+        // Felsökningsmetod som visar meddelanden i UI och loggar fel till log.txt
+        public void AddDebugLog(string message)
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke(new Action(() => AddDebugLog(message)));
+                return;
+            }
+
+            lstRewards.Items.Add($"[LOGG {DateTime.Now:HH:mm:ss}] {message}");
+
+            // Om det är ett felmeddelande sparas det i log.txt
+            if (message.Contains("Fel") || message.Contains("Undantag") || message.Contains("Formatfel"))
+            {
+                LogToFile($"FEL: {message}");
+            }
         }
 
         /* --- FILHANTERING (log.txt enligt avsnitt 5.2) --- */
@@ -95,26 +110,61 @@ namespace Guldkortet
             }
         }
 
+        private void LogToFile(string logText)
+        {
+            try
+            {
+                string logPath = "log.txt";
+                string timeStamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                string logMessage = $"[{timeStamp}] {logText}";
+
+                // Använder StreamWriter med append: true för att bevara tidigare data
+                using (StreamWriter writer = new StreamWriter(logPath, true, Encoding.UTF8))
+                {
+                    writer.WriteLine(logMessage);
+                }
+            }
+            // Om programmet inte kan logga eller avbryts i processen
+            catch (Exception ex)
+            {
+                MessageBox.Show("Kunde inte skriva till loggfilen: " + ex.Message);
+            }
+        }
+
         // Stänger servern säkert om fönstret stängs
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
             serverManager.StopServer();
+
+            // Skriver ut hela listan med belöningar till en textfil när programmet avslutas
+            WriteRewardListToFile();
+        }
+
+        // Metod som skriver ut hela listan med belöningar till en textfil när programmet avslutas
+        private void WriteRewardListToFile()
+        {
+            try
+            {
+                string filePath = "rewardlist.txt";
+                Reward[] allRewards = rewardList.GetAll();
+
+                using (StreamWriter writer = new StreamWriter(filePath, false, Encoding.UTF8))
+                {
+                    foreach (Reward reward in allRewards)
+                    {
+                        writer.WriteLine(reward.GenerateMessage());
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Kunde inte skriva belöningslistan till fil: " + ex.Message);
+            }
         }
 
         private void lblStatus_Click(object sender, EventArgs e)
         {
 
-        }
-
-        // Debug metod
-        public void AddDebugLog(string message)
-        {
-            if (this.InvokeRequired)
-            {
-                this.Invoke(new Action(() => AddDebugLog(message)));
-                return;
-            }
-            lstRewards.Items.Add($"[LOGG {DateTime.Now:HH:mm:ss}] {message}");
         }
     }
 }

@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace Guldkortet
 {
@@ -91,24 +92,8 @@ namespace Guldkortet
 
                     while (client.Connected)
                     {
-
-                        // Läser en bestämd mängd tecken istället för att vänta på en
-                        // radbrytning eller stängningtexten från NOS_Export (t.ex. "A1256720-K57295726")
-                        char[] buffer = new char[19];
-                        int charsRead = await reader.ReadAsync(buffer, 0, 19);
-
-                        if (charsRead == 0)
-                        {
-                            // Klienten stängde anslutningen normalt
-                            break;
-                        }
-
-                        string rawData = new string(buffer, 0, charsRead);
-
-                        if (charsRead != 19)
-                        {
-                            throw new InvalidCodeFormatException("Koden uppfyller inte det förväntade antalet tecken.");
-                        }
+                        // Läser texten från NOS_Export (t.ex. "A1256720-K57295726")
+                        string rawData = await reader.ReadToEndAsync();
 
                         if (rawData == null)
                         {
@@ -139,36 +124,40 @@ namespace Guldkortet
                         string cardId = parts[1].Trim();
 
                         // 3. Söker i databasen efter korttypen
-                        string rewardType = dbManager.GetRewardTypeByCardId(cardId);
+                        CardLookupResult cardInfo = dbManager.GetCardInfo(cardId);
 
-                        // 4. Om kortet hittades i databasen
-                        if (rewardType != null)
+                        // 4.Hantera de olika utfallen baserat på kortets status
+                        if (!cardInfo.Found)
                         {
-                            // Skapar ett Reward-objekt via fabriken
-                            Reward reward = RewardFactory.CreateReward(rewardType);
+                            await TryWriteStringAsync(writer, "Fel: Okänd kod.");
 
-                            if (reward != null)
-                            {
-                                // Markerar kortet som utnyttjat (UPDATE) och loggar i databasen (INSERT)
-                                dbManager.MarkCardUsed(cardId);
-                                dbManager.InsertTransactionLog(cardId, customerId, reward.Name);
+                            mainForm.Invoke(new Action(() =>
+                                mainForm.AddDebugLog($"Kort-ID {cardId} hittades inte i DB.")));
+                        }
+                        else if (!cardInfo.IsGoldCard)
+                        {
+                            await TryWriteStringAsync(writer, "Koden är giltig, men ger ingen vinst.");
 
-                                // Skickar svarspopup tillbaka till NOS_Export
-                                await TryWriteStringAsync(writer, reward.GenerateMessage());
-
-                                // Skickar kortet till gränssnittet
-                                mainForm.AddRewardToList(reward, customerId);
-                            }
+                            mainForm.Invoke(new Action(() =>
+                                mainForm.AddDebugLog($"Kort-ID {cardId} är giltigt men inte ett Guldkort.")));
+                        }
+                        else if (cardInfo.IsUsed)
+                        {
+                            throw new CardAlreadyUsedException();
                         }
                         else
                         {
-                            // Annars visas ett felet att kortet inte hittades eller redan använts
-                            await TryWriteStringAsync(writer, "Fel: Kortet är inte ett giltigt eller oanvänt guldkort.");
+                            Reward reward = RewardFactory.CreateReward(cardInfo.CardName);
 
+                            if (reward != null)
+                            {
+                                dbManager.MarkCardUsed(cardId);
+                                dbManager.InsertTransactionLog(cardId, customerId, reward.Name);
 
-                            // Loggar i gränssnittetatt kort-id inte hittades
-                            mainForm.Invoke(new Action(() =>
-                                mainForm.AddDebugLog($"Kort-ID {cardId} hittades inte i DB eller var använt.")));
+                                await TryWriteStringAsync(writer, reward.GenerateMessage());
+
+                                mainForm.AddRewardToList(reward, customerId);
+                            }
                         }
                     }
                 }
@@ -177,10 +166,23 @@ namespace Guldkortet
                     // Sker om formatet är fel
                     await TryWriteStringAsync(writer, "Fel: " + ex.Message);
 
-
-
                     mainForm.Invoke(new Action(() =>
                         mainForm.AddDebugLog("Formatfel: " + ex.Message)));
+                }
+                catch (CardAlreadyUsedException ex)
+                {
+                    await TryWriteStringAsync(writer, "Fel: " + ex.Message);
+
+                    mainForm.Invoke(new Action(() =>
+                        mainForm.AddDebugLog("Kortet redan använt: " + ex.Message)));
+                }
+                catch (DatabaseConnectionException ex)
+                {
+                    // Sker om databasanslutningen eller frågan misslyckas
+                    await TryWriteStringAsync(writer, "Fel: " + ex.Message);
+
+                    mainForm.Invoke(new Action(() =>
+                        mainForm.AddDebugLog("Databasfel: " + ex.Message)));
                 }
                 catch (IOException ex )
                 {

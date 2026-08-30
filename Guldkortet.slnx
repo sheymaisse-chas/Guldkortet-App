@@ -1,3 +1,9 @@
 <Solution>
-  <Project Path="Guldkortet/Guldkortet.csproj" Id="63eda18b-1fae-4c2e-88e7-1868c0a4fd63" />
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+  </Configurations>
+  <Project Path="Guldkortet/Guldkortet.csproj" Id="63eda18b-1fae-4c2e-88e7-1868c0a4fd63">
+    <Platform Solution="*|x64" Project="x64" />
+  </Project>
 </Solution>
