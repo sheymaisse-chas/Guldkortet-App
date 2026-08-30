@@ -78,7 +78,7 @@ namespace Guldkortet
             using (client)
             using (NetworkStream stream = client.GetStream())
             using (StreamReader reader = new StreamReader(stream, Encoding.Unicode))
-            using (StreamWriter writer = new StreamWriter(stream, Encoding.ASCII) { AutoFlush = true })
+            using (StreamWriter writer = new StreamWriter(stream, Encoding.Unicode) { AutoFlush = true })
             {
 
                 try
