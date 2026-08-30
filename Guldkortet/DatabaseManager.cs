@@ -9,7 +9,7 @@ namespace Guldkortet
         private string connectionString = @"Data Source=C:\Users\Sheyma\Documents\C-Sharp\Guldkortet\Guldkortet\Guldkortet.db";
 
         // Metod som hämtar korttypen ("Eldtomat" osv.) från databasen utifrån kortets ID
-        public CardLookupResult GetCardInfo(string cardId)
+        public Card GetCardInfo(string cardId)
         {
             // SQL-fråga med parameter(@CardId) för att förhindra SQL Injection(attacker)
             string query = "SELECT CardName, IsGoldCard, IsUsed FROM Cards WHERE CardID = @CardId";
@@ -35,17 +35,17 @@ namespace Guldkortet
                         // Om en rad hittas byggs ett CardLookupResult med kortets data, annars returneras Found = false
                         if (reader.Read())
                         {
-                            return new CardLookupResult
-                            {
-                                Found = true,
-                                CardName = reader.GetString(0),
-                                IsGoldCard = reader.GetInt32(1) == 1,
-                                IsUsed = reader.GetInt32(2) == 1
-                            };
+                            return new Card(
+                                cardId,
+                                reader.GetString(0),
+                                reader.GetInt32(1) == 1,
+                                reader.GetInt32(2) == 1
+
+                                );
                         }
                         else
                         {
-                            return new CardLookupResult { Found = false };
+                            return null;
                         }
 
                     }
@@ -54,6 +54,45 @@ namespace Guldkortet
                 {
                     // Om databasanslutningen eller frågan misslyckas kastas ett eget undantag
                     throw new DatabaseConnectionException("Kunde inte hämta kortinformation från databasen.", ex);
+                }
+            }
+        }
+
+        // Hämtar kunduppgifter från databasen utifrån CustomerID, eller null om kunden inte hittas
+        public Customer GetCustomerById(string customerId)
+        {
+            string query = "SELECT CustomerID, Name, Email FROM Customers WHERE CustomerID = @CustomerId";
+
+            using (SqliteConnection connection = new SqliteConnection(connectionString))
+            using (SqliteCommand command = new SqliteCommand(query, connection))
+            {
+                command.Parameters.AddWithValue("@CustomerId", customerId);
+
+                try
+                {
+                    connection.Open();
+
+                    using (SqliteDataReader reader = command.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            // Bygger ett Customer-objekt med datan från databasen
+                            return new Customer(
+                                reader.GetString(0),
+                                reader.GetString(1),
+                                reader.GetString(2)
+                            );
+                        }
+                        else
+                        {
+                            // Ingen kund med detta ID hittades
+                            return null;
+                        }
+                    }
+                }
+                catch (SqliteException ex)
+                {
+                    throw new DatabaseConnectionException("Kunde inte hämta kunduppgifter från databasen.", ex);
                 }
             }
         }

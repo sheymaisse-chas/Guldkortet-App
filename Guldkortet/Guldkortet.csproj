@@ -108,7 +108,6 @@
   <ItemGroup>
     <Compile Include="Card.cs" />
     <Compile Include="CardAlreadyUsedException.cs" />
-    <Compile Include="CardLookupResult.cs" />
     <Compile Include="CrystalSteed.cs" />
     <Compile Include="DatabaseConnectionException.cs" />
     <Compile Include="DatabaseManager.cs" />
@@ -143,7 +142,6 @@
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
     <None Include="Guldkortet.db" />
-    <None Include="Guldkortet.sqbpro" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -159,8 +157,6 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="kortlista.txt" />
-    <Content Include="kundlista.txt" />
     <Content Include="NOS_Export.exe" />
     <Content Include="Resources\firehound.jpg" />
     <Content Include="Resources\flyingsquirrel.jpg" />

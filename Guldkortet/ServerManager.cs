@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace Guldkortet
@@ -76,8 +77,8 @@ namespace Guldkortet
             // 'using' ser till att allt stängs automatiskt när det är klart
             using (client)
             using (NetworkStream stream = client.GetStream())
-            using (StreamReader reader = new StreamReader(stream, Encoding.Default))
-            using (StreamWriter writer = new StreamWriter(stream, Encoding.Default) { AutoFlush = true })
+            using (StreamReader reader = new StreamReader(stream, Encoding.Unicode))
+            using (StreamWriter writer = new StreamWriter(stream, Encoding.ASCII) { AutoFlush = true })
             {
 
                 try
@@ -92,9 +93,24 @@ namespace Guldkortet
 
                     while (client.Connected)
                     {
-                        // Läser texten från NOS_Export (t.ex. "A1256720-K57295726")
-                        string rawData = await reader.ReadToEndAsync();
+                        char[] buffer = new char[19];
+                        int charsRead = await ReadExactAsync(reader, buffer, 19);
 
+                        if (charsRead == 0)
+                        {
+                            // Klienten stängde anslutningen normalt
+                            return;
+                        }
+
+                        string rawData = new string(buffer, 0, charsRead);
+
+                        mainForm.Invoke(new Action(() =>
+                            mainForm.AddDebugLog($"Längd på rawData: {rawData.Length} tecken")));
+
+                        if (charsRead != 19)
+                        {
+                            throw new InvalidCodeFormatException("Koden uppfyller inte det förväntade antalet tecken.");
+                        }
                         if (rawData == null)
                         {
                             mainForm.Invoke(new Action(() =>
@@ -123,11 +139,26 @@ namespace Guldkortet
                         string customerId = parts[0].Trim();
                         string cardId = parts[1].Trim();
 
-                        // 3. Söker i databasen efter korttypen
-                        CardLookupResult cardInfo = dbManager.GetCardInfo(cardId);
+                        // 3. Söker i databasen
+
+                        // Söker upp kortinfo i databasen
+                        Card cardInfo = dbManager.GetCardInfo(cardId);
+
+                        // Söker upp kunden i databasen
+                        Customer customer = dbManager.GetCustomerById(customerId);
+
+                        if (customer == null)
+                        {
+                            await TryWriteStringAsync(writer, "Fel: Kund hittades inte.");
+
+                            mainForm.Invoke(new Action(() =>
+                                mainForm.AddDebugLog($"Kund-ID {customerId} hittades inte i DB.")));
+
+                            return;
+                        }
 
                         // 4.Hantera de olika utfallen baserat på kortets status
-                        if (!cardInfo.Found)
+                        if (cardInfo == null)
                         {
                             await TryWriteStringAsync(writer, "Fel: Okänd kod.");
 
@@ -220,6 +251,31 @@ namespace Guldkortet
                 // Om klienten hann koppla från innan vi svarade ignorerar vi skrivfelet
                 Console.WriteLine($"[Skrivfel] Kunde inte skicka svar till klienten ('{message}'). Orsak: {ex.Message}");
             }
+        }
+
+        // Läser exakt "count" tecken från strömmen, även om datan kommer i flera små delar/paket.
+        // Detta behövs eftersom ReadAsync() kan returnera innan hela meddelandet hunnit anlända,
+        // särskilt om avsändaren (t.ex. NOS_Export) skickar data i flera små bitar istället för allt på en gång.
+        private async Task<int> ReadExactAsync(StreamReader reader, char[] buffer, int count)
+        {
+            int totalRead = 0;
+
+            // Fortsätter läsa tills vi antingen fått ihop "count" tecken totalt, eller anslutningen stängs
+            while (totalRead < count)
+            {
+                // Läser in nästa del av datan, med offset så vi inte skriver över det vi redan läst
+                int read = await reader.ReadAsync(buffer, totalRead, count - totalRead);
+
+                if (read == 0)
+                {
+                    // Anslutningen stängdes innan vi fick all förväntad data
+                    break;
+                }
+
+                totalRead += read;
+            }
+
+            return totalRead;
         }
 
         // Stänger ner servern
