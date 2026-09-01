@@ -153,8 +153,6 @@ namespace Guldkortet
 
                             mainForm.Invoke(new Action(() =>
                                 mainForm.AddDebugLog($"Kund-ID {customerId} hittades inte i DB.")));
-
-                            return;
                         }
 
                         // 4.Hantera de olika utfallen baserat på kortets status
