@@ -7,24 +7,24 @@ namespace Guldkortet
     public static class RewardFactory
     {
 
-        // Läser in bokdata från textfil och skapar bokobjekt
+        // Läser in bokdata från textfil och skapar kort-objekt
         public static Reward CreateReward(string rewardTypeFromDb)
         {
             // Switch-satsen matchar databasens text mot programmets Reward underklasser
             switch (rewardTypeFromDb)
             {
-                case "FireHound":
+                case "Eldtomat":
                     return new FireHound();
-                case "ThunderCat":
+                case "Dunderkatt":
                     return new ThunderCat();
-                case "FlyingSquirrel":
+                case "Överpanda":
                     return new FlyingSquirrel();
-                case "CrystalSteed":
+                case "Kristallhäst":
                     return new CrystalSteed();
 
                 default:
-                    // Detta sker om strängen inte matchar något känt namn
-                    throw new ArgumentException($"Okänd belöningstyp: {rewardTypeFromDb}");
+                    // Returnerar null om koden är giltig men saknar vinst i fabriken.
+                    return null;
             }
         }
     }

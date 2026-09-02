@@ -106,7 +106,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Card.cs" />
+    <Compile Include="Kort.cs" />
     <Compile Include="CardAlreadyUsedException.cs" />
     <Compile Include="CrystalSteed.cs" />
     <Compile Include="DatabaseConnectionException.cs" />
@@ -120,7 +120,7 @@
     <Compile Include="ServerManager.cs" />
     <Compile Include="ThunderCat.cs" />
     <Compile Include="Reward.cs" />
-    <Compile Include="Customer.cs" />
+    <Compile Include="Kund.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -141,7 +141,6 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <None Include="Guldkortet.db" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -157,6 +156,22 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="kortlista.txt" />
+    <Content Include="Kortregister.mdf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Kortregister_log.ldf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <DependentUpon>Kortregister.mdf</DependentUpon>
+    </Content>
+    <Content Include="kundlista.txt" />
+    <Content Include="Kundregister.mdf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Kundregister_log.ldf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <DependentUpon>Kundregister.mdf</DependentUpon>
+    </Content>
     <Content Include="NOS_Export.exe" />
     <Content Include="Resources\firehound.jpg" />
     <Content Include="Resources\flyingsquirrel.jpg" />

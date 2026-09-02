@@ -32,11 +32,19 @@
             this.btnStop = new System.Windows.Forms.Button();
             this.lblStatus = new System.Windows.Forms.Label();
             this.lstRewards = new System.Windows.Forms.ListBox();
+            this.txtKommun = new System.Windows.Forms.TextBox();
+            this.txtAnvandarNr = new System.Windows.Forms.TextBox();
+            this.txtNamn = new System.Windows.Forms.TextBox();
+            this.btnAddKund = new System.Windows.Forms.Button();
+            this.btnUpdateKund = new System.Windows.Forms.Button();
+            this.label2 = new System.Windows.Forms.Label();
+            this.label3 = new System.Windows.Forms.Label();
+            this.label4 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // btnStart
             // 
-            this.btnStart.Location = new System.Drawing.Point(12, 62);
+            this.btnStart.Location = new System.Drawing.Point(12, 698);
             this.btnStart.Name = "btnStart";
             this.btnStart.Size = new System.Drawing.Size(228, 76);
             this.btnStart.TabIndex = 0;
@@ -68,16 +76,95 @@
             // 
             this.lstRewards.FormattingEnabled = true;
             this.lstRewards.ItemHeight = 31;
-            this.lstRewards.Location = new System.Drawing.Point(263, 62);
+            this.lstRewards.Location = new System.Drawing.Point(286, 62);
             this.lstRewards.Name = "lstRewards";
-            this.lstRewards.Size = new System.Drawing.Size(1608, 810);
+            this.lstRewards.Size = new System.Drawing.Size(1585, 810);
             this.lstRewards.TabIndex = 3;
+            // 
+            // txtKommun
+            // 
+            this.txtKommun.Location = new System.Drawing.Point(12, 359);
+            this.txtKommun.Name = "txtKommun";
+            this.txtKommun.Size = new System.Drawing.Size(228, 38);
+            this.txtKommun.TabIndex = 4;
+            this.txtKommun.TextChanged += new System.EventHandler(this.textBox1_TextChanged);
+            // 
+            // txtAnvandarNr
+            // 
+            this.txtAnvandarNr.Location = new System.Drawing.Point(12, 160);
+            this.txtAnvandarNr.Name = "txtAnvandarNr";
+            this.txtAnvandarNr.Size = new System.Drawing.Size(228, 38);
+            this.txtAnvandarNr.TabIndex = 5;
+            this.txtAnvandarNr.TextChanged += new System.EventHandler(this.textBox2_TextChanged);
+            // 
+            // txtNamn
+            // 
+            this.txtNamn.Location = new System.Drawing.Point(12, 258);
+            this.txtNamn.Name = "txtNamn";
+            this.txtNamn.Size = new System.Drawing.Size(228, 38);
+            this.txtNamn.TabIndex = 6;
+            // 
+            // btnAddKund
+            // 
+            this.btnAddKund.Location = new System.Drawing.Point(12, 422);
+            this.btnAddKund.Name = "btnAddKund";
+            this.btnAddKund.Size = new System.Drawing.Size(228, 76);
+            this.btnAddKund.TabIndex = 7;
+            this.btnAddKund.Text = "Lägg till kund";
+            this.btnAddKund.UseVisualStyleBackColor = true;
+            // 
+            // btnUpdateKund
+            // 
+            this.btnUpdateKund.Location = new System.Drawing.Point(12, 504);
+            this.btnUpdateKund.Name = "btnUpdateKund";
+            this.btnUpdateKund.Size = new System.Drawing.Size(228, 76);
+            this.btnUpdateKund.TabIndex = 8;
+            this.btnUpdateKund.Text = "Uppdatera uppgifter";
+            this.btnUpdateKund.UseVisualStyleBackColor = true;
+            this.btnUpdateKund.Click += new System.EventHandler(this.btnUpdateKund_Click);
+            // 
+            // label2
+            // 
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(6, 125);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(118, 32);
+            this.label2.TabIndex = 10;
+            this.label2.Text = "KundNr:";
+            this.label2.Click += new System.EventHandler(this.label2_Click);
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(12, 223);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(97, 32);
+            this.label3.TabIndex = 11;
+            this.label3.Text = "Namn:";
+            this.label3.Click += new System.EventHandler(this.label3_Click);
+            // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Location = new System.Drawing.Point(12, 324);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(127, 32);
+            this.label4.TabIndex = 12;
+            this.label4.Text = "Kommun";
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(16F, 31F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1883, 894);
+            this.Controls.Add(this.label4);
+            this.Controls.Add(this.label3);
+            this.Controls.Add(this.label2);
+            this.Controls.Add(this.btnUpdateKund);
+            this.Controls.Add(this.btnAddKund);
+            this.Controls.Add(this.txtNamn);
+            this.Controls.Add(this.txtAnvandarNr);
+            this.Controls.Add(this.txtKommun);
             this.Controls.Add(this.lstRewards);
             this.Controls.Add(this.lblStatus);
             this.Controls.Add(this.btnStop);
@@ -96,6 +183,14 @@
         private System.Windows.Forms.Button btnStop;
         private System.Windows.Forms.Label lblStatus;
         private System.Windows.Forms.ListBox lstRewards;
+        private System.Windows.Forms.TextBox txtKommun;
+        private System.Windows.Forms.TextBox txtAnvandarNr;
+        private System.Windows.Forms.TextBox txtNamn;
+        private System.Windows.Forms.Button btnAddKund;
+        private System.Windows.Forms.Button btnUpdateKund;
+        private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.Label label4;
     }
 }
 

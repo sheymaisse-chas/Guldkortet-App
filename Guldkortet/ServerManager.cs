@@ -33,20 +33,23 @@ namespace Guldkortet
             // Try-Catch sats som tar emot anslutningar
             try
             {
-                // Om instruktionen anger 127.0.0.1 (Localhost):
                 IPAddress localAddr = IPAddress.Parse("127.0.0.1");
-
                 listener = new TcpListener(localAddr, port);
                 listener.Start();
                 isRunning = true;
+
+                // Loggar i GUI att servern startat
+                mainForm.Invoke(new Action(() =>
+                    mainForm.AddDebugLog($"Server startad på port {port}...")));
 
                 // Anropar den asynkrona lyssnarloopen direkt
                 ListenForClientsAsync();
             }
             catch (Exception ex)
             {
-                // Om servern ej startas
-                Console.WriteLine("Kunde inte starta servern: " + ex.Message);
+                // Om servern ej startas loggas felet i GUI
+                mainForm.Invoke(new Action(() =>
+                    mainForm.AddDebugLog("Kunde inte starta servern: " + ex.Message)));
             }
         }
 
@@ -125,7 +128,6 @@ namespace Guldkortet
                         if (string.IsNullOrEmpty(rawData))
                         {
                             await TryWriteStringAsync(writer, "Fel: Tom data.");
-                            return;
                         }
 
                         // Kontrollera att texten innehåller ett bindestreck
@@ -136,56 +138,59 @@ namespace Guldkortet
 
                         // Delar upp strängen vid bindestrecket
                         string[] parts = rawData.Split('-');
-                        string customerId = parts[0].Trim();
-                        string cardId = parts[1].Trim();
+                        string användarNr = parts[0].Trim();
+                        string kortNr = parts[1].Trim();
 
                         // 3. Söker i databasen
 
                         // Söker upp kortinfo i databasen
-                        Card cardInfo = dbManager.GetCardInfo(cardId);
+                        Kort kortInfo = dbManager.GetKortByNr(kortNr);
 
                         // Söker upp kunden i databasen
-                        Customer customer = dbManager.GetCustomerById(customerId);
+                        Kund kundInfo = dbManager.GetKundByNr(användarNr);
 
-                        if (customer == null)
+                        if (kundInfo == null)
                         {
                             await TryWriteStringAsync(writer, "Fel: Kund hittades inte.");
 
                             mainForm.Invoke(new Action(() =>
-                                mainForm.AddDebugLog($"Kund-ID {customerId} hittades inte i DB.")));
+                                mainForm.AddDebugLog($"Kund nummer {användarNr} hittades inte i DB.")));
+                            continue;
                         }
 
                         // 4.Hantera de olika utfallen baserat på kortets status
-                        if (cardInfo == null)
+                        if (kortInfo == null)
                         {
                             await TryWriteStringAsync(writer, "Fel: Okänd kod.");
 
                             mainForm.Invoke(new Action(() =>
-                                mainForm.AddDebugLog($"Kort-ID {cardId} hittades inte i DB.")));
+                                mainForm.AddDebugLog($"Kort-ID {kortNr} hittades inte i DB.")));
                         }
-                        else if (!cardInfo.IsGoldCard)
+                        // 1. KONTROLLERA OM KORTET REDAN ÄR ANVÄNT
+                        else if (mainForm.IsKortUsed(kortNr))
                         {
-                            await TryWriteStringAsync(writer, "Koden är giltig, men ger ingen vinst.");
-
-                            mainForm.Invoke(new Action(() =>
-                                mainForm.AddDebugLog($"Kort-ID {cardId} är giltigt men inte ett Guldkort.")));
-                        }
-                        else if (cardInfo.IsUsed)
-                        {
-                            throw new CardAlreadyUsedException();
+                            throw new CardAlreadyUsedException("Kortet har redan lösts in.");
                         }
                         else
                         {
-                            Reward reward = RewardFactory.CreateReward(cardInfo.CardName);
+                            // Skapar vinst baserat på korttypen från databasen
+                            Reward reward = RewardFactory.CreateReward(kortInfo.KortTyp);
 
                             if (reward != null)
                             {
-                                dbManager.MarkCardUsed(cardId);
-                                dbManager.InsertTransactionLog(cardId, customerId, reward.Name);
-
+                                // Skickar vinstmeddelandet till simulatorn/klienten
                                 await TryWriteStringAsync(writer, reward.GenerateMessage());
 
-                                mainForm.AddRewardToList(reward, customerId);
+                                // Lägger till vinsten i listan i gränssnittet
+                                mainForm.Invoke(new Action(() =>
+                                    mainForm.AddRewardToList(reward, användarNr, kortNr)));
+                            }
+                            else
+                            {
+                                await TryWriteStringAsync(writer, "Koden är giltig, men ger ingen vinst.");
+
+                                mainForm.Invoke(new Action(() =>
+                                    mainForm.AddDebugLog($"Kort {kortNr} är giltigt men gav ingen vinst.")));
                             }
                         }
                     }

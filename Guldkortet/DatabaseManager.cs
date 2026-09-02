@@ -1,46 +1,46 @@
 ﻿using System;
-using Microsoft.Data.Sqlite;
+using System.Data.SqlClient;
 
 namespace Guldkortet
 {
     public class DatabaseManager
     {
-        // Ansluter till min lokala databasfil
-        private string connectionString = @"Data Source=C:\Users\Sheyma\Documents\C-Sharp\Guldkortet\Guldkortet\Guldkortet.db";
+        // 1. Hämtar mappen där programmet körs och för Kort-databasen
+        private string connectionStringKort = @"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=" + AppDomain.CurrentDomain.BaseDirectory + "Kortregister.mdf;Integrated Security=True;";
+
+        // 2. För Kund-databasen
+        private string connectionStringKund = @"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=" + AppDomain.CurrentDomain.BaseDirectory + "Kundregister.mdf;Integrated Security=True;";
 
         // Metod som hämtar korttypen ("Eldtomat" osv.) från databasen utifrån kortets ID
-        public Card GetCardInfo(string cardId)
+        public Kort GetKortByNr(string kortNr)
         {
-            // SQL-fråga med parameter(@CardId) för att förhindra SQL Injection(attacker)
-            string query = "SELECT CardName, IsGoldCard, IsUsed FROM Cards WHERE CardID = @CardId";
+            // SQL-fråga med parameter(@KortNr) för att förhindra SQL Injection(attacker)
+            string query = "SELECT KortTyp FROM Kort WHERE KortNr = @KortNr";
 
             // Skapar och öppnar anslutningen säkert. 
             // 'using' ser till att databasanslutningen stängs och frigörs automatiskt även vid eventuella fel.
-            using (SqliteConnection connection = new SqliteConnection(connectionString))
+            using (SqlConnection connection = new SqlConnection(connectionStringKort))
 
             // Skapar SQL-kommandot med vår fråga och aktiva anslutning
-            using (SqliteCommand command = new SqliteCommand(query, connection))
+            using (SqlCommand command = new SqlCommand(query, connection))
             {
-                // Matchar parametern cardId med @CardId
-                command.Parameters.AddWithValue("@CardId", cardId);
+                // Matchar parametern kortNr med @KortNr
+                command.Parameters.AddWithValue("@KortNr", kortNr);
 
                 try
                 {
                     // Öppna anslutningen mot databasfilen
                     connection.Open();
 
-                    // ExecuteReader används eftersom vi nu hämtar flera kolumner (CardName, IsGoldCard, IsUsed) från samma rad
-                    using (SqliteDataReader reader = command.ExecuteReader())
+                    // ExecuteReader används eftersom vi nu hämtar flera kolumner (KortNr, KortTyp) från samma rad
+                    using (SqlDataReader reader = command.ExecuteReader())
                     {
-                        // Om en rad hittas byggs ett CardLookupResult med kortets data, annars returneras Found = false
+                        // Om en rad hittas byggs ett Kort-objekt med kortets data, annars returneras Found = false
                         if (reader.Read())
                         {
-                            return new Card(
-                                cardId,
-                                reader.GetString(0),
-                                reader.GetInt32(1) == 1,
-                                reader.GetInt32(2) == 1
-
+                            return new Kort(
+                                kortNr,
+                                reader.GetString(0)
                                 );
                         }
                         else
@@ -50,7 +50,7 @@ namespace Guldkortet
 
                     }
                 }
-                catch (SqliteException ex)
+                catch (SqlException ex)
                 {
                     // Om databasanslutningen eller frågan misslyckas kastas ett eget undantag
                     throw new DatabaseConnectionException("Kunde inte hämta kortinformation från databasen.", ex);
@@ -58,26 +58,26 @@ namespace Guldkortet
             }
         }
 
-        // Hämtar kunduppgifter från databasen utifrån CustomerID, eller null om kunden inte hittas
-        public Customer GetCustomerById(string customerId)
+        // Hämtar kunduppgifter från databasen utifrån AnvändarNr, eller null om kunden inte hittas
+        public Kund GetKundByNr(string användarNr)
         {
-            string query = "SELECT CustomerID, Name, Email FROM Customers WHERE CustomerID = @CustomerId";
+            string query = "SELECT AnvändarNr, Namn, Kommun FROM Kunder WHERE AnvändarNr = @AnvändarNr";
 
-            using (SqliteConnection connection = new SqliteConnection(connectionString))
-            using (SqliteCommand command = new SqliteCommand(query, connection))
+            using (SqlConnection connection = new SqlConnection(connectionStringKund))
+            using (SqlCommand command = new SqlCommand(query, connection))
             {
-                command.Parameters.AddWithValue("@CustomerId", customerId);
+                command.Parameters.AddWithValue("@AnvändarNr", användarNr);
 
                 try
                 {
                     connection.Open();
 
-                    using (SqliteDataReader reader = command.ExecuteReader())
+                    using (SqlDataReader reader = command.ExecuteReader())
                     {
                         if (reader.Read())
                         {
-                            // Bygger ett Customer-objekt med datan från databasen
-                            return new Customer(
+                            // Bygger ett Kund-objekt med datan från databasen
+                            return new Kund(
                                 reader.GetString(0),
                                 reader.GetString(1),
                                 reader.GetString(2)
@@ -85,28 +85,30 @@ namespace Guldkortet
                         }
                         else
                         {
-                            // Ingen kund med detta ID hittades
+                            // Ingen kund med detta nummer hittades
                             return null;
                         }
                     }
                 }
-                catch (SqliteException ex)
+                catch (SqlException ex)
                 {
                     throw new DatabaseConnectionException("Kunde inte hämta kunduppgifter från databasen.", ex);
                 }
             }
         }
 
-        // Metod för att uppdatera statusen på ett kort och markera det som utnyttjat
-        public bool MarkCardUsed(string cardId)
+        // Metod för att uppdatera en kunds information
+        public bool UpdateKund(string användarNr, string nyttNamn, string nyKommun)
         {
-            // SQL-fråga som uppdaterar kolumnen Uttnyttjad till 1 (true) för det angivna kortnumret
-            string query = "UPDATE Cards SET IsUsed = 1 WHERE CardID = @CardId";
+            // SQL-fråga som uppdaterar kommun för det angivna kundnumret
+            string query = "UPDATE Kunder SET Namn = @NyttNamn, Kommun = @NyKommun WHERE AnvändarNr = @AnvändarNr";
 
-            using (SqliteConnection connection = new SqliteConnection(connectionString))
-            using (SqliteCommand command = new SqliteCommand(query, connection))
+            using (SqlConnection connection = new SqlConnection(connectionStringKund))
+            using (SqlCommand command = new SqlCommand(query, connection))
             {
-                command.Parameters.AddWithValue("@CardId", cardId);
+                command.Parameters.AddWithValue("@NyttNamn", nyttNamn);
+                command.Parameters.AddWithValue("@NyKommun", nyKommun);
+                command.Parameters.AddWithValue("@AnvändarNr", användarNr);
 
                 try
                 {
@@ -120,27 +122,26 @@ namespace Guldkortet
                     // Om mer än 0 rader uppdaterades returneras true (att den lyckades)
                     return rowsAffected > 0;
                 }
-                catch (SqliteException ex)
+                catch (SqlException ex)
                 {
-                    throw new DatabaseConnectionException("Kunde inte uppdatera kortets status i databasen.", ex);
+                    throw new DatabaseConnectionException("Kunde inte uppdatera kundens uppgifter i databasen.", ex);
                 }
             }
         }
 
         // Metod för att lägga till historik av alla godkända inlösen i databasen
-        public bool InsertTransactionLog(string cardId, string customerId, string rewardName)
+        public bool InsertKund(string användarNr, string namn, string kommun)
         {
-            // SQL-fråga för att lägga till en ny rad i en tabell (t.ex. Transaktioner)
-            string query = "INSERT INTO Transaktioner (CardID, CustomerID, RewardName, Date) VALUES (@CardId, @CustomerId, @RewardName, @Date)";
+            // SQL-fråga för att lägga till en ny kund i Kunder-tabellen
+            string query = "INSERT INTO Kunder (AnvändarNr, Namn, Kommun) VALUES (@AnvändarNr, @Namn, @Kommun)";
 
-            using (SqliteConnection connection = new SqliteConnection(connectionString))
-            using (SqliteCommand command = new SqliteCommand(query, connection))
+            using (SqlConnection connection = new SqlConnection(connectionStringKund))
+            using (SqlCommand command = new SqlCommand(query, connection))
             {
                 // Använder parametrar för att göra databasanropet säkert mot SQL-injection
-                command.Parameters.AddWithValue("@CardId", cardId);
-                command.Parameters.AddWithValue("@CustomerId", customerId);
-                command.Parameters.AddWithValue("@RewardName", rewardName);
-                command.Parameters.AddWithValue("@Date", DateTime.Now);
+                command.Parameters.AddWithValue("@AnvändarNr", användarNr);
+                command.Parameters.AddWithValue("@Namn", namn);
+                command.Parameters.AddWithValue("@Kommun", kommun);
 
                 try
                 {
@@ -151,9 +152,9 @@ namespace Guldkortet
 
                     return rowsAffected > 0;
                 }
-                catch (SqliteException ex)
+                catch (SqlException ex)
                 {
-                    throw new DatabaseConnectionException("Kunde inte spara transaktionsloggen i databasen.", ex);
+                    throw new DatabaseConnectionException("Kunde inte spara den nya kunden i databasen.", ex);
                 }
 
             }
