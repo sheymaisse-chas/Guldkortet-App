@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace Guldkortet
@@ -60,7 +61,7 @@ namespace Guldkortet
 
         // Startar servern när användaren klickar på Starta-knappen.
         // Ändrar lblStatus så att den visar att servern är kopplad.
-        private void btnStart_Click(object sender, EventArgs e)
+        private async void btnStart_Click(object sender, EventArgs e)
         {
             IProgress<string> logProgress = new Progress<string>(AddDebugLog);
 
@@ -68,7 +69,7 @@ namespace Guldkortet
             IProgress<RewardResult> rewardProgress = new Progress<RewardResult>(data =>
                 AddRewardToList(data.Reward, data.AnvändarNr, data.KortNr));
 
-            tcpManager.StartServerAsync(logProgress, rewardProgress);
+            await tcpManager.StartServerAsync(logProgress, rewardProgress);
             lblStatus.Text = "Status: Online (Lyssnar på port 12345)";
             lblStatus.ForeColor = System.Drawing.Color.Green;
         }
@@ -205,7 +206,7 @@ namespace Guldkortet
             lstRewards.Items.Add(displayInfo);
 
             // 4. Loggar händelsen till log.txt
-            LogToFile($"Vinst registrerad | Kund: {användarNr} | Kort: {kortNr} | Belöning: {reward.Name}");
+            _ = LogToFile($"Vinst registrerad | Kund: {användarNr} | Kort: {kortNr} | Belöning: {reward.Name}");
         }
 
         // Metod som kollar om kortnumret redan finns i listan
@@ -219,7 +220,7 @@ namespace Guldkortet
 
         /* --- FILHANTERING --- */
 
-        private void LogToFile(string logText)
+        private async Task LogToFile(string logText)
         {
             try
             {
@@ -229,7 +230,7 @@ namespace Guldkortet
                 // Använder StreamWriter med append: true för att bevara tidigare data
                 using (StreamWriter writer = new StreamWriter(logPath, true, Encoding.UTF8))
                 {
-                    writer.WriteLine($"[{timeStamp}] {logText}");
+                    await writer.WriteLineAsync($"[{timeStamp}] {logText}");
                 }
             }
             // Om programmet inte kan logga eller avbryts i processen
@@ -251,7 +252,7 @@ namespace Guldkortet
         }
 
         // Metod som skriver ut hela listan med belöningar till en textfil när programmet avslutas
-        private void WriteRewardListToFile()
+        private async Task WriteRewardListToFile()
         {
             try
             {
@@ -262,7 +263,7 @@ namespace Guldkortet
                 {
                     foreach (Reward reward in allRewards)
                     {
-                        writer.WriteLine(reward.GenerateMessage());
+                        await writer.WriteLineAsync(reward.GenerateMessage());
                     }
                 }
             }

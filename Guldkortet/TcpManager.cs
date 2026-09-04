@@ -33,7 +33,7 @@ namespace Guldkortet
         }
 
         // Startar servern och börjar lyssna
-        public async void StartServerAsync(IProgress<string> logProgress, IProgress<RewardResult> rewardProgress)
+        public async Task StartServerAsync(IProgress<string> logProgress, IProgress<RewardResult> rewardProgress)
         {
             _logProgress = logProgress;
             _rewardProgress = rewardProgress;
