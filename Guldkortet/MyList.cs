@@ -8,9 +8,9 @@ using System.Threading.Tasks;
 namespace Guldkortet
 {
     // Egen listklass baserad på en array
-    public class MyRewardList
+    public class MyList<T>
     {
-        private Reward[] items;
+        private T[] items;
         private int count;
 
         public int Count
@@ -18,15 +18,15 @@ namespace Guldkortet
             get { return count; }
         }
 
-        public MyRewardList()
+        public MyList()
         {
             // Startar med plats för 4 belöningar
-            items = new Reward[4];
+            items = new T[4];
             count = 0;
         }
 
         // Lägger till ett element i listan
-        public void Add(Reward reward)
+        public void Add(T item)
         {
             // Om arrayen är full, dubblera storleken
             if (count == items.Length)
@@ -34,14 +34,14 @@ namespace Guldkortet
                 ExpandArray();
             }
 
-            items[count] = reward;
+            items[count] = item;
             count++;
         }
 
         // Hjälpmetod för att förstora arrayen när den blir full
         private void ExpandArray()
         {
-            Reward[] tempArray = new Reward[items.Length * 2];
+            T[] tempArray = new T[items.Length * 2];
             for (int i = 0; i < items.Length; i++)
             {
                 tempArray[i] = items[i];
@@ -50,19 +50,19 @@ namespace Guldkortet
         }
 
         // Hämtar ett element via ett index (t.ex. mylist.Get(0))
-        public Reward Get(int index)
+        public T Get(int index)
         {
             if (index >= 0 && index < count)
             {
                 return items[index];
             }
-            return null;
+            return default(T);
         }
 
         // Returnerar en kopia av alla sparade belöningar (upp till count, inte hela den interna arrayens kapacitet)
-        public Reward[] GetAll()
+        public T[] GetAll()
         {
-            Reward[] result = new Reward[count];
+            T[] result = new T[count];
             for (int i = 0; i < count; i++)
             {
                 result[i] = items[i];

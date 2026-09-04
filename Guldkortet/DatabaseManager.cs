@@ -1,22 +1,23 @@
 ﻿using System;
 using System.Data.SqlClient;
+using System.Threading.Tasks;
 
 namespace Guldkortet
 {
     public class DatabaseManager
     {
         // 1. Hämtar mappen där programmet körs och för Kort-databasen
-        private string connectionStringKort = @"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=" + AppDomain.CurrentDomain.BaseDirectory + "Kortregister.mdf;Integrated Security=True;";
+        private string connectionStringKort = "Data Source=(LocalDB)\\MSSQLLocalDB;AttachDbFilename=|DataDirectory|Kortregister.mdf;Integrated Security=True;";
 
         // 2. För Kund-databasen
-        private string connectionStringKund = @"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=" + AppDomain.CurrentDomain.BaseDirectory + "Kundregister.mdf;Integrated Security=True;";
+        private string connectionStringKund = "Data Source=(LocalDB)\\MSSQLLocalDB;AttachDbFilename=|DataDirectory|Kundregister.mdf;Integrated Security=True;";
 
         // Metod som hämtar korttypen ("Eldtomat" osv.) från databasen utifrån kortets ID
-        public Kort GetKortByNr(string kortNr)
+        public async Task<Kort> GetKortByNrAsync(string kortNr)
         {
             // SQL-fråga med parameter(@KortNr) för att förhindra SQL Injection(attacker)
             string query = "SELECT KortTyp FROM Kort WHERE KortNr = @KortNr";
-
+             
             // Skapar och öppnar anslutningen säkert. 
             // 'using' ser till att databasanslutningen stängs och frigörs automatiskt även vid eventuella fel.
             using (SqlConnection connection = new SqlConnection(connectionStringKort))
@@ -30,13 +31,13 @@ namespace Guldkortet
                 try
                 {
                     // Öppna anslutningen mot databasfilen
-                    connection.Open();
+                    await connection.OpenAsync();
 
                     // ExecuteReader används eftersom vi nu hämtar flera kolumner (KortNr, KortTyp) från samma rad
-                    using (SqlDataReader reader = command.ExecuteReader())
+                    using (SqlDataReader reader = (SqlDataReader)await command.ExecuteReaderAsync())
                     {
                         // Om en rad hittas byggs ett Kort-objekt med kortets data, annars returneras Found = false
-                        if (reader.Read())
+                        if (await reader.ReadAsync())
                         {
                             return new Kort(
                                 kortNr,
@@ -59,7 +60,7 @@ namespace Guldkortet
         }
 
         // Hämtar kunduppgifter från databasen utifrån AnvändarNr, eller null om kunden inte hittas
-        public Kund GetKundByNr(string användarNr)
+        public async Task<Kund> GetKundByNrAsync(string användarNr)
         {
             string query = "SELECT AnvändarNr, Namn, Kommun FROM Kunder WHERE AnvändarNr = @AnvändarNr";
 
@@ -70,11 +71,11 @@ namespace Guldkortet
 
                 try
                 {
-                    connection.Open();
+                    await connection.OpenAsync();
 
-                    using (SqlDataReader reader = command.ExecuteReader())
+                    using (SqlDataReader reader = (SqlDataReader)await command.ExecuteReaderAsync())
                     {
-                        if (reader.Read())
+                        if (await reader.ReadAsync())
                         {
                             // Bygger ett Kund-objekt med datan från databasen
                             return new Kund(
@@ -98,7 +99,7 @@ namespace Guldkortet
         }
 
         // Metod för att uppdatera en kunds information
-        public bool UpdateKund(string användarNr, string nyttNamn, string nyKommun)
+        public async Task<bool> UpdateKundAsync(string användarNr, string nyttNamn, string nyKommun)
         {
             // SQL-fråga som uppdaterar kommun för det angivna kundnumret
             string query = "UPDATE Kunder SET Namn = @NyttNamn, Kommun = @NyKommun WHERE AnvändarNr = @AnvändarNr";
@@ -112,11 +113,11 @@ namespace Guldkortet
 
                 try
                 {
-                    connection.Open();
+                    await connection.OpenAsync();
 
                     // ExecuteNonQuery används för UPDATE/INSERT/DELETE där vi inte förväntar oss rader i retur, 
                     // utan antalet rader som påverkades i databasen.
-                    int rowsAffected = command.ExecuteNonQuery();
+                    int rowsAffected = await command.ExecuteNonQueryAsync();
 
 
                     // Om mer än 0 rader uppdaterades returneras true (att den lyckades)
@@ -130,7 +131,7 @@ namespace Guldkortet
         }
 
         // Metod för att lägga till historik av alla godkända inlösen i databasen
-        public bool InsertKund(string användarNr, string namn, string kommun)
+        public async Task<bool> InsertKundAsync(string användarNr, string namn, string kommun)
         {
             // SQL-fråga för att lägga till en ny kund i Kunder-tabellen
             string query = "INSERT INTO Kunder (AnvändarNr, Namn, Kommun) VALUES (@AnvändarNr, @Namn, @Kommun)";
@@ -145,10 +146,10 @@ namespace Guldkortet
 
                 try
                 {
-                    connection.Open();
+                    await connection.OpenAsync();
 
                     // ExecuteNonQuery kör INSERT-frågan och returnerar antalet rader som lagts till
-                    int rowsAffected = command.ExecuteNonQuery();
+                    int rowsAffected = await command.ExecuteNonQueryAsync();
 
                     return rowsAffected > 0;
                 }
